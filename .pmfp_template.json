@@ -51,7 +51,7 @@
             "default_path": "{{ project_name }}/channels"
         },
         "decorators": {
-            "source": "cp_py_sanic/decorators",
+            "source": "cp_py_sanic//decorators",
             "description": "装饰器组件模板",
             "default_path": "{{ project_name }}/decorators/__init__.py"
         },
