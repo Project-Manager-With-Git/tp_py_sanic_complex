@@ -8,8 +8,7 @@ from sanic.log import logger, error_logger, access_logger
 from sanic_openapi import openapi2_blueprint
 from .apis import init_api
 from .downloads import init_downloads
-from .channels import init_channels
-from .ws import init_ws
+from .events import init_channels
 from .listeners import init_listeners
 from .middlewares import init_middleware
 from .models import init_models
@@ -61,8 +60,6 @@ def new_app() -> Sanic:
     init_downloads(sanic_app)
     # 注册基于sse的channels
     init_channels(sanic_app)
-    # 注册websocket
-    init_ws(sanic_app)
     return sanic_app
 
 

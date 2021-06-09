@@ -1,0 +1,19 @@
+{
+    "added_components": {
+        "cp_dockercompose//server_standalone": "docker-compose.yml",
+        "cp_dockerfiles//python_http_ext_dockerfile": "dockerfile",
+        "cp_py_sanic//aiossecli": "aiossecli.py",
+        "cp_py_sanic//aiowscli": "aiowscli.py",
+        "cp_py_sanic//apis": "test_sanic/apis",
+        "cp_py_sanic//channels": "test_sanic/channels",
+        "cp_py_sanic//decorator_checkjsonschema": "test_sanic/decorators/checkjsonschema.py",
+        "cp_py_sanic//decorators": "test_sanic/decorators/__init__.py",
+        "cp_py_sanic//downloads": "test_sanic/downloads",
+        "cp_py_sanic//listeners": "test_sanic/events",
+        "cp_py_sanic//middlewares": "test_sanic/middlewares",
+        "cp_py_sanic//models": "test_sanic/models",
+        "tp_py_sanic_complex//init": "test_sanic/__init__.py",
+        "tp_py_sanic_complex//main": "test_sanic/__main__.py"
+    },
+    "env": "venv"
+}
