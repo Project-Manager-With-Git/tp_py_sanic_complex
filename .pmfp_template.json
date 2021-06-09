@@ -96,7 +96,7 @@
             "default_path": "docker-compose.yml"
         },
         "dockerfile": {
-            "source": "cp_dockerfile//python_http_ext_dockerfile",
+            "source": "cp_dockerfiles//python_http_ext_dockerfile",
             "description": "构造sanic项目的dockerfile",
             "default_path": "dockerfile"
         }
