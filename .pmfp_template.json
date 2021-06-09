@@ -45,10 +45,10 @@
             "description": "RESTful接口组件模板",
             "default_path": "{{ project_name }}/apis"
         },
-        "channels": {
+        "events": {
             "source": "cp_py_sanic//channels",
             "description": "使用sse构造的pub/sub接口组件模板",
-            "default_path": "{{ project_name }}/channels"
+            "default_path": "{{ project_name }}/events"
         },
         "decorators": {
             "source": "cp_py_sanic//decorators",
@@ -65,10 +65,10 @@
             "description": "使用stream构造下载项目的组件",
             "default_path": "{{ project_name }}/downloads"
         },
-        "events": {
+        "listeners": {
             "source": "cp_py_sanic//listeners",
             "description": "sanic的hooks定义",
-            "default_path": "{{ project_name }}/events"
+            "default_path": "{{ project_name }}/listeners"
         },
         "middlewares": {
             "source": "cp_py_sanic//middlewares",
