@@ -65,20 +65,15 @@
             "description": "使用stream构造下载项目的组件",
             "default_path": "{{ project_name }}/downloads"
         },
-        "listeners": {
+        "events": {
             "source": "cp_py_sanic//listeners",
             "description": "sanic的hooks定义",
-            "default_path": "{{ project_name }}/listeners"
+            "default_path": "{{ project_name }}/events"
         },
         "middlewares": {
             "source": "cp_py_sanic//middlewares",
             "description": "sanic的中间件定义",
             "default_path": "{{ project_name }}/middlewares"
-        },
-        "ws": {
-            "source": "cp_py_sanic//ws",
-            "description": "sanic的websocket接口定义",
-            "default_path": "{{ project_name }}/ws"
         },
         "models": {
             "source": "cp_py_sanic//models",
@@ -101,7 +96,7 @@
             "default_path": "docker-compose.yml"
         },
         "dockerfile": {
-            "source": "cp_py_sanic//dockerfile",
+            "source": "cp_dockerfile//python_http_ext_dockerfile",
             "description": "构造sanic项目的dockerfile",
             "default_path": "dockerfile"
         }
