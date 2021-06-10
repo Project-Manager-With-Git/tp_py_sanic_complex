@@ -1,67 +1,87 @@
 import uuid
+import asyncio
+from pyloggerhelper import log
 from sanic.response import json, HTTPResponse
 from sanic.request import Request
 from sanic.views import HTTPMethodView
 from sanic_openapi import doc
+from sserender import SSE
+from test_sanic.aredis_proxy import redis
 from ...decorators.checkjsonschema import checkjsonschema
-from ...models import User
+from .schema import post_query_schema
+
 
 class ListSource(HTTPMethodView):
 
-    @doc.summary("监听全部timer")
-    async def get(self, _: Request) -> HTTPResponse:
-        cnt = await User.all().count()
-        result = {
-            "Description": "测试api,User总览",
-            "UserCount": cnt,
-            "Links": [
-                {
-                    "uri": "/user",
-                    "method": "POST",
-                    "description": "创建一个新用户"
-                },
-                {
-                    "uri": "/user/<int:uid>",
-                    "method": "GET",
-                    "description": "用户号为<id>的用户信息"
-                },
-                {
-                    "uri": "/user/<int:uid>",
-                    "method": "PUT",
-                    "description": "更新用户号为<id>用户信息"
-                },
-                {
-                    "uri": "/user/<int:uid>",
-                    "method": "DELETE",
-                    "description": "删除用户号为<id>用户"
-                },
-            ]
-        }
-
-        return json(result, ensure_ascii=False)
+    @doc.summary("监听指定计时器")
+    @doc.tag("event")
+    @doc.produces(
+        doc.String(description="sse消息"),
+        description="监听流",
+        content_type="text/event-stream;charset=UTF-8")
+    async def get(self, request: Request) -> HTTPResponse:
+        response = await request.respond(
+            content_type="text/event-stream;charset=UTF-8",
+            headers={
+                "Connection": "keep-alive",
+                "Transfer-Encoding": "chunked",
+                "Cache-Control": "no-cache"
+            }
+        )
+        p = redis.pubsub()
+        await p.subscribe('timer::golbal')
+        log.info("subscribe ok")
+        while True:
+            message = await p.get_message(ignore_subscribe_messages=True, timeout=0.01)
+            if message is not None:
+                log.info("get msg", msg=message)
+                sse = SSE.from_content(message["data"])
+                if sse.event == "END":
+                    await response.send(SSE(comment="END").render(), True)
+                    break
+                else:
+                    await response.send(message["data"])
+        return response
 
     @staticmethod
     @doc.summary("创建一个倒计时")
+    @doc.tag("event")
+    @doc.consumes(doc.JsonBody({
+        "seconds": doc.Integer("倒计时信息.")
+    }), location="body")
+    @doc.produces({
+        "channelid": str
+    }, description="频道id", content_type="application/json")
     @checkjsonschema(post_query_schema)
     async def post(request: Request) -> HTTPResponse:
         query_json = request.json
-        try:
-            u = await User.create(name=query_json.get("name", ""))
-        except Exception as e:
-            return json({
-                "msg": "执行错误",
-            }, status=500, ensure_ascii=False)
-        else:
-            channel_id = uuid.uuid4().hex
+        seconds = query_json.get("seconds")
+        channelid = str(uuid.uuid4())
 
-            async def countdown_maker(seconds: int, channel_id: str) -> None:
-                eid = 0
+        async def countdown_maker(seconds: int, channelid: str) -> None:
+            await redis.sadd("timer::channels", channelid)
+            eid = 0
+            try:
                 for i in range(seconds, 0, -1):
-                    await sse.send(event="countdown", event_id=str(eid), data=str(i), channel_id=channel_id)
+                    msg = SSE(event="countdown", ID=str(eid), data=str(i)).render()
+                    async with await redis.pipeline() as pipe:
+                        await pipe.publish(f'timer::{channelid}', msg)
+                        await pipe.publish('timer::golbal', msg)
+                        await pipe.execute()
+                    # log.info("send msg ok", msg=msg)
                     eid += 1
                     await asyncio.sleep(1)
-                # close_channel(channel_id)
+            finally:
+                msg = SSE(event="countdown", ID=str(seconds), data="0").render()
+                async with await redis.pipeline() as pipe:
+                    await pipe.publish(f'timer::{channelid}', msg)
+                    await pipe.publish('timer::golbal', msg)
+                    await pipe.execute()
+                endmsg = SSE(comment="END").render()
+                await redis.publish(f'timer::{channelid}', endmsg)
+                await redis.srem("timer::channels", channelid)
+                log.info("send close ok", msg=endmsg)
+                await asyncio.sleep(1)
 
-            app = request.app
-            app.add_task(countdown_maker(seconds, channel_id))
-            return json({"status": "ok", "channel_id": channel_id})
+        request.app.add_task(countdown_maker(seconds, channelid))
+        return json({"channelid": channelid})

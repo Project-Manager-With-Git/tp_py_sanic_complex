@@ -1,19 +1,18 @@
-
 import ssl
-import json
-from pathlib import Path
 from typing import Any, Dict
 from pyloggerhelper import log
 from schema_entry import EntryPoint
 from sanic import Sanic
 from sanic.log import logger, error_logger, access_logger
 from sanic_openapi import openapi2_blueprint
+from sanic_cors import CORS
 from test_sanic.apis import init_api
 from test_sanic.downloads import init_downloads
-from test_sanic.events import init_channels
+from test_sanic.events import init_events
 from test_sanic.listeners import init_listeners
 from test_sanic.middlewares import init_middleware
 from test_sanic.models import init_models
+from test_sanic.aredis_proxy import redis
 
 
 class Serv(EntryPoint):
@@ -36,7 +35,7 @@ class Serv(EntryPoint):
                 "type": "string",
                 "title": "v",
                 "description": "应用版本",
-                "default": "0.0.0"
+                "default": "1.0.0"
             },
             "app_name": {
                 "type": "string",
@@ -44,11 +43,10 @@ class Serv(EntryPoint):
                 "description": "应用名",
                 "default": "test_sanic_sender"
             },
-
             "log_level": {
                 "type": "string",
                 "title": "l",
-                "description": "log等级",
+                "description": "log等级,如果为DEBUG则会认为服务启动在debug模式,且cors不设防",
                 "enum": ["DEBUG", "INFO", "WARN", "ERROR"],
                 "default": "DEBUG"
             },
@@ -67,7 +65,7 @@ class Serv(EntryPoint):
             "published_address": {
                 "type": "string",
                 "title": "p",
-                "description": "外部访问地址"
+                "description": "外部访问地址,如果指定则会激活cors"
             },
             "cros_allow_origins": {
                 "type": "array",
@@ -117,6 +115,16 @@ class Serv(EntryPoint):
             "client_crl_path": {
                 "type": "string",
                 "description": "客户端证书黑名单"
+            },
+            "db_url": {
+                "type": "string",
+                "description": "连接的数据库路径",
+                "default": "sqlite://:memory:"
+            },
+            "redis_url": {
+                "type": "string",
+                "description": "连接的redis路径",
+                "default": "redis://localhost"
             }
         }
     }
@@ -139,7 +147,7 @@ class Serv(EntryPoint):
             "access_log": access_log,
         }
         # ssl相关配置
-        if self.config.get.get("serv_cert_path") and self.config.get.get("serv_key_path"):
+        if self.config.get("serv_cert_path") and self.config.get.get("serv_key_path"):
             context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             context.load_cert_chain(self.config["serv_cert_path"], keyfile=self.config["serv_key_path"])
             if self.config.get("ca_cert_path"):
@@ -171,9 +179,46 @@ class Serv(EntryPoint):
         if log_level == "DEBUG":
             from sanic_testing import TestManager
             TestManager(app)
+            # 配置swagger
             app.blueprint(openapi2_blueprint)
+            address = self.config.get("address", "0.0.0.0:5000")
+            _, port = address.split(":")
+            app.config.API_HOST = f"localhost:{port}"
+            app.config.API_BASEPATH = "/"
+            app.config.API_SCHEMES = ["http"]
+            if self.config.get("serv_cert_path") and self.config.get.get("serv_key_path"):
+                app.config.API_SCHEMES.append("https")
+            app.config.API_VERSION = self.config.get("app_version")
+            app.config.API_TITLE = self.config.get("app_name")
+            # app.config.API_DESCRIPTION
+            # app.config.API_CONTACT_EMAIL
+            # app.config.API_LICENSE_NAME
+            # app.config.API_SECURITY_DEFINITIONS = {"BasicAuth": {"type": "basic"}}
+            # app.config.API_SECURITY_DEFINITIONS = {"ApiKeyAuth": {"type": "apiKey", "in": "header", "name": "Authorization"}}
 
-        
+        # 注册cors
+        if log_level == "DEBUG":
+            CORS(app)
+        else:
+            published_address = self.config.get("published_address")
+            schema = "http"
+            if self.config.get("serv_cert_path") != "" and self.config.get("serv_key_path"):
+                schema = "https"
+            address = self.config["address"]
+            cors_config: Dict[str, Any] = {
+                "origins": [f"{schema}://{address}"]
+            }
+            if self.config.get("published_address"):
+                cors_config["origins"] += [f"{schema}://{a}" for a in published_address]
+            if self.config.get("cros_allow_origins"):
+                cors_config["origins"] += self.config["cros_allow_origins"]
+            if self.config.get("cros_allow_credentials"):
+                cors_config["supports_credentials"] = True
+            if self.config.get("cors_allow_headers"):
+                cors_config["allow_headers"] = self.config["cors_allow_headers"]
+            if self.config.get("cors_expose_headers"):
+                cors_config["expose_headers"] = self.config["cors_expose_headers"]
+            CORS(app, **cors_config)
 
         # 注册静态文件
         if self.config.get("static_page_dir"):
@@ -182,7 +227,11 @@ class Serv(EntryPoint):
             app.static("/static", self.config["static_source_dir"])
 
         # 注册数据模型
-        init_models(app)
+        init_models(app, db_url=self.config.get("db_url"), log_level=log_level)
+        # 初始化redis
+        redis_url = self.config.get("redis_url")
+        redis.initialize_from_url(redis_url, decode_responses=True)
+        log.info("init redis ok", redis_url=redis_url)
         # 注册listeners
         init_listeners(app)
         # 注册中间件
@@ -192,5 +241,5 @@ class Serv(EntryPoint):
         # 注册下载接口
         init_downloads(app)
         # 注册基于sse的channels
-        init_channels(app)
+        init_events(app)
         self._run_serv(app)

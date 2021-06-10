@@ -6,8 +6,8 @@ from tortoise.contrib.sanic import register_tortoise
 from .usermodel import User
 
 
-def init_models(app: Sanic, db_url: str = "sqlite://:memory:", generate_schemas: bool = True) -> Sanic:
-    tortoise.logger.setLevel(app.config.get("LOG_LEVEL", "DEBUG"))
+def init_models(app: Sanic, *, db_url: str = "sqlite://:memory:", generate_schemas: bool = True, log_level="DEBUG") -> Sanic:
+    tortoise.logger.setLevel(log_level)
     register_tortoise(
         app, db_url=db_url, modules={"models": ["test_sanic.models"]}, generate_schemas=generate_schemas
     )

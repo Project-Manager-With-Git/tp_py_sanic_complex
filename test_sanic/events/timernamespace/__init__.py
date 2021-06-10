@@ -1,7 +1,7 @@
 from sanic import Blueprint
-from sanic_sse import Sse
-from .countdown import countdown
+from .listsource import ListSource
+from .source import Source
 
-trigger = Blueprint("trigger", url_prefix="/trigger", version=1)
-
-trigger.get("/countdown/<seconds:int>")(countdown)
+timernamespace = Blueprint("timer", url_prefix="/timer", version="1_0_0")
+timernamespace.add_route(ListSource.as_view(), "/")
+timernamespace.add_route(Source.as_view(), "/<channelid:string>", strict_slashes=True)
