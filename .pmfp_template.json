@@ -110,6 +110,11 @@
             "description": "sanic项目的模块__init__.py文件",
             "default_path": "{{ project_name }}/__init__.py"
         },
+        "aredis_proxy": {
+            "source": "cp_py_files//initfile",
+            "description": "aredis的代理对象",
+            "default_path": "{{ project_name }}/__init__.py"
+        },
         "docker-compose": {
             "source": "cp_dockercompose//server_standalone",
             "description": "通用的服务使用的dockercompose,适用于调试",
