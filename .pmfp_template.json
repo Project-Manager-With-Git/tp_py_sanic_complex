@@ -111,9 +111,9 @@
             "default_path": "{{ project_name }}/__init__.py"
         },
         "aredis_proxy": {
-            "source": "cp_py_files//initfile",
+            "source": "cp_py_files//aredis_proxy",
             "description": "aredis的代理对象",
-            "default_path": "{{ project_name }}/__init__.py"
+            "default_path": "{{ project_name }}/aredis_proxy.py"
         },
         "docker-compose": {
             "source": "cp_dockercompose//server_standalone",
