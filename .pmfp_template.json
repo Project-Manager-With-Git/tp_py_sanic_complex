@@ -40,15 +40,25 @@
             "description": "websocket的异步客户端模板",
             "default_path": "aiowscli.py"
         },
-        "apis": {
-            "source": "cp_py_sanic//apis",
+        "apis_init": {
+            "source": "cp_py_sanic//apis_init",
             "description": "RESTful接口组件模板",
-            "default_path": "{{ project_name }}/apis"
+            "default_path": "{{ project_name }}/apis/__init__.py"
         },
-        "events": {
-            "source": "cp_py_sanic//channels",
+        "apis_namespace": {
+            "source": "cp_py_sanic//apis_namespace",
+            "description": "RESTful接口组件模板",
+            "default_path": "{{ project_name }}/apis/{{ apinamespace }}namespace"
+        },
+        "events_init": {
+            "source": "cp_py_sanic//events_init",
             "description": "使用sse构造的pub/sub接口组件模板",
-            "default_path": "{{ project_name }}/events"
+            "default_path": "{{ project_name }}/events/__init__.py"
+        },
+        "events_namespace": {
+            "source": "cp_py_sanic//events_namespace",
+            "description": "使用sse构造的pub/sub接口组件模板",
+            "default_path": "{{ project_name }}/events/{{ eventnamespace }}namespace"
         },
         "decorators": {
             "source": "cp_py_sanic//decorators",
@@ -60,10 +70,15 @@
             "description": "通过jsonschema校验请求body的装饰器",
             "default_path": "{{ project_name }}/decorators/checkjsonschema.py"
         },
-        "downloads": {
-            "source": "cp_py_sanic//downloads",
+        "downloads_init": {
+            "source": "cp_py_sanic//downloads_init",
             "description": "使用stream构造下载项目的组件",
-            "default_path": "{{ project_name }}/downloads"
+            "default_path": "{{ project_name }}/downloads/__init__.py"
+        },
+        "downloads_namespace": {
+            "source": "cp_py_sanic//downloads_namespace",
+            "description": "使用stream构造下载项目的组件",
+            "default_path": "{{ project_name }}/downloads/{{ eventnamespace }}namespace"
         },
         "listeners": {
             "source": "cp_py_sanic//listeners",
