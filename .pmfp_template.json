@@ -95,13 +95,18 @@
             "description": "sanic使用的异步的orm定义数据模型的组件",
             "default_path": "{{ project_name }}/models"
         },
+        "serv": {
+            "source": "serv",
+            "description": "sanic的服务启动配置",
+            "default_path": "{{ project_name }}/serv"
+        },
         "main": {
-            "source": "__main__.py.jinja",
+            "source": "cp_py_sanic//main",
             "description": "sanic项目的模块的入口组件",
             "default_path": "{{ project_name }}/__main__.py"
         },
         "init": {
-            "source": "__init__.py.jinja",
+            "source": "cp_py_files//initfile",
             "description": "sanic项目的模块__init__.py文件",
             "default_path": "{{ project_name }}/__init__.py"
         },
