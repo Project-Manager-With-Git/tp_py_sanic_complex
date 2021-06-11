@@ -12,6 +12,8 @@ async def main() -> None:
         try:
             async for event in event_source:
                 print(event)
+                if event.data == "0":
+                    break
         except ConnectionError:
             pass
 

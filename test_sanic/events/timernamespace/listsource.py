@@ -36,8 +36,9 @@ class ListSource(HTTPMethodView):
             if message is not None:
                 log.info("get msg", msg=message)
                 sse = SSE.from_content(message["data"])
-                if sse.event == "END":
-                    await response.send(SSE(comment="END").render(), True)
+                if sse.comment and sse.comment.strip() == "END":
+                    # await response.send(message["data"])
+                    await response.send("", True)
                     break
                 else:
                     await response.send(message["data"])
